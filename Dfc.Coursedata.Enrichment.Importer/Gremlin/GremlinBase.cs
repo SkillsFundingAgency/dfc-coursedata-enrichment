@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Dfc.CourseData.Importer;
 using Gremlin.Net.Driver;
 using Gremlin.Net.Driver.Exceptions;
 using Newtonsoft.Json;
 
-namespace Dfc.CourseData.Importer.Gremlin
+namespace Dfc.Coursedata.Enrichment.Importer.Gremlin
 {
     public class GremlinBase
     {

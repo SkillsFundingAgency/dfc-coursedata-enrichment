@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Dfc.CourseData.Importer;
 using Dfc.ProviderPortal.Providers;
 using Microsoft.Extensions.Logging;
 using UKRLP.Storage;
 
-namespace Dfc.CourseData.Importer.Data
+namespace Dfc.Coursedata.Enrichment.Importer.Data
 {
     public class ProviderCourseData
     {

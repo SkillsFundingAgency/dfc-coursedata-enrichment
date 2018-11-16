@@ -1,6 +1,6 @@
 ﻿using System;
-using Dfc.CourseData.Importer.Data;
-using Dfc.CourseData.Importer.Gremlin;
+using Dfc.Coursedata.Enrichment.Importer.Data;
+using Dfc.Coursedata.Enrichment.Importer.Gremlin;
 
 namespace Dfc.CourseData.Importer
 {

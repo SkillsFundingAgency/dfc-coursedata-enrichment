@@ -5,7 +5,7 @@ using Gremlin.Net.Driver;
 using Gremlin.Net.Structure.IO.GraphSON;
 using Newtonsoft.Json;
 
-namespace Dfc.CourseData.Importer.Gremlin
+namespace Dfc.Coursedata.Enrichment.Importer.Gremlin
 {
     public class Insert : GremlinBase
     {
