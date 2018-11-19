@@ -14,20 +14,20 @@ namespace Dfc.Coursedata.Enrichment.Services
 {
     public class LarsSearchService : ILarsSearchService
     {
-        private readonly ILogger<LarsSearchService> _logger;
+        //private readonly ILogger<LarsSearchService> _logger;
         private readonly HttpClient _httpClient;
         private readonly Uri _uri;
 
         public LarsSearchService(
-            ILogger<LarsSearchService> logger,
+            //ILogger<LarsSearchService> logger,
             HttpClient httpClient,
             IOptions<LarsSearchSettings> settings)
         {
-            Throw.IfNull(logger, nameof(logger));
+            //Throw.IfNull(logger, nameof(logger));
             Throw.IfNull(httpClient, nameof(httpClient));
             Throw.IfNull(settings, nameof(settings));
 
-            _logger = logger;
+            //_logger = logger;
             _httpClient = httpClient.Setup(settings.Value);
             _uri = settings.Value.ToUri();
         }
@@ -36,23 +36,23 @@ namespace Dfc.Coursedata.Enrichment.Services
         {
             Throw.IfNull(criteria, nameof(criteria));
 
-            _logger.LogMethodEnter();
+            //_logger.LogMethodEnter();
 
             try
             {
-                _logger.LogInformationObject("Lars search criteria.", criteria);
-                _logger.LogInformationObject("Lars search uri.", _uri);
+                //_logger.LogInformationObject("Lars search criteria.", criteria);
+                //_logger.LogInformationObject("Lars search uri.", _uri);
 
                 var content = new StringContent(criteria.ToJson(), Encoding.UTF8, "application/json");
                 var response = await _httpClient.PostAsync(_uri, content);
 
-                _logger.LogHttpResponseMessage("Lars search service http response.", response);
+                //_logger.LogHttpResponseMessage("Lars search service http response.", response);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
 
-                    _logger.LogInformationObject("Lars search service json response.", json);
+                    //_logger.LogInformationObject("Lars search service json response.", json);
 
                     var settings = new JsonSerializerSettings
                     {
@@ -70,19 +70,19 @@ namespace Dfc.Coursedata.Enrichment.Services
             }
             catch (HttpRequestException hre)
             {
-                _logger.LogException("Lars search service http request error.", hre);
+                //_logger.LogException("Lars search service http request error.", hre);
 
                 return Result.Fail<ILarsSearchResult>("Lars search service http request error.");
             }
             catch (Exception e)
             {
-                _logger.LogException("Lars search service unknown error.", e);
+                //_logger.LogException("Lars search service unknown error.", e);
 
                 return Result.Fail<ILarsSearchResult>("Lars search service unknown error.");
             }
             finally
             {
-                _logger.LogMethodExit();
+                //_logger.LogMethodExit();
             }
         }
     }

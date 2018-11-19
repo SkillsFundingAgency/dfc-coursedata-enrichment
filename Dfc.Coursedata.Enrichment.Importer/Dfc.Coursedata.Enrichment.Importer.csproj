@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="9.1.0" />
     <PackageReference Include="Gremlin.Net.CosmosDb" Version="0.3.4.2-rc1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0-preview3-35497" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
@@ -14,6 +15,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\CareersServiceSource\dfc-providerportal-ukrlp\src\Dfc.ProviderPortal.UKRLP\Dfc.ProviderPortal.UKRLP.csproj" />
     <ProjectReference Include="..\Dfc.Coursedata.Enrichment.Services\Dfc.Coursedata.Enrichment.Services.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

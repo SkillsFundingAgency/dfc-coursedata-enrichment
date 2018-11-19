@@ -1,24 +1,58 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Dfc.CourseData.Importer;
+using Dfc.Coursedata.Enrichment.Importer.Interfaces;
 using Gremlin.Net.Driver;
 using Gremlin.Net.Driver.Exceptions;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 namespace Dfc.Coursedata.Enrichment.Importer.Gremlin
 {
-    public class GremlinBase
+    public class GremlinBase : IGremlinBase
     {
-        private static string hostname = SettingsHelper.CosmosGraphDbHostname;
-        private static int port = SettingsHelper.CosmosGraphDbPort;
-        private static string authKey = SettingsHelper.CosmosGraphDbAuthKey;
-        private static string database = SettingsHelper.CosmosGraphDbDatabase;
-        private static string collection = SettingsHelper.CosmosGraphDbCollection;
+        private readonly string _hostname ;
+        private readonly int _port ;
+        private readonly string _authKey ;
+        private readonly string _database ;
+        private readonly string _collection ;
+        public GremlinServer GremlinServer;
 
-        public static GremlinServer GremlinServer = new GremlinServer(hostname, port, enableSsl: true, username: "/dbs/" + database + "/colls/" + collection, password: authKey);
+        public GremlinBase(IOptions<GremlinCosmosDbSettings> cosmosDbSettings)
+        {
+            //var value = cosmosDbSettings.Value;
+            //var hostname = cosmosDbSettings.Value.Hostname;
+            _hostname = cosmosDbSettings.Value.Hostname;
+            _port = cosmosDbSettings.Value.Port;
+            _authKey = cosmosDbSettings.Value.AuthKey;
+            _database = cosmosDbSettings.Value.Database;
+            _collection = cosmosDbSettings.Value.Collection;
+            GremlinServer = new GremlinServer(_hostname, _port, enableSsl: true, username: "/dbs/" + _database + "/colls/" + _collection, password: _authKey);
+        }
 
-        protected static Task<ResultSet<dynamic>> SubmitRequest(GremlinClient gremlinClient, KeyValuePair<string, string> query)
+        public void PrintStatusAttributes(IReadOnlyDictionary<string, object> attributes)
+        {
+            Console.WriteLine($"\tStatusAttributes:");
+            Console.WriteLine($"\t[\"x-ms-status-code\"] : { GetValueAsString(attributes, "x-ms-status-code")}");
+            Console.WriteLine($"\t[\"x-ms-total-request-charge\"] : { GetValueAsString(attributes, "x-ms-total-request-charge")}");
+        }
+
+        public string GetValueAsString(IReadOnlyDictionary<string, object> dictionary, string key)
+        {
+            return JsonConvert.SerializeObject(GetValueOrDefault(dictionary, key));
+        }
+
+        public object GetValueOrDefault(IReadOnlyDictionary<string, object> dictionary, string key)
+        {
+            if (dictionary.ContainsKey(key))
+            {
+                return dictionary[key];
+            }
+
+            return null;
+        }
+
+        public Task<ResultSet<dynamic>> SubmitRequest(GremlinClient gremlinClient, KeyValuePair<string, string> query)
         {
             try
             {
@@ -43,28 +77,6 @@ namespace Dfc.Coursedata.Enrichment.Importer.Gremlin
 
                 throw;
             }
-        }
-
-        protected static void PrintStatusAttributes(IReadOnlyDictionary<string, object> attributes)
-        {
-            Console.WriteLine($"\tStatusAttributes:");
-            Console.WriteLine($"\t[\"x-ms-status-code\"] : { GetValueAsString(attributes, "x-ms-status-code")}");
-            Console.WriteLine($"\t[\"x-ms-total-request-charge\"] : { GetValueAsString(attributes, "x-ms-total-request-charge")}");
-        }
-
-        public static string GetValueAsString(IReadOnlyDictionary<string, object> dictionary, string key)
-        {
-            return JsonConvert.SerializeObject(GetValueOrDefault(dictionary, key));
-        }
-
-        public static object GetValueOrDefault(IReadOnlyDictionary<string, object> dictionary, string key)
-        {
-            if (dictionary.ContainsKey(key))
-            {
-                return dictionary[key];
-            }
-
-            return null;
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-namespace Dfc.CourseData.Importer
+namespace Dfc.Coursedata.Enrichment.Importer
 {
     public static class SettingsHelper
     {
