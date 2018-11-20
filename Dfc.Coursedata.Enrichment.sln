@@ -13,6 +13,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dfc.ProviderPortal.UKRLP", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UKRLP.ProviderSynchronise", "..\dfc-providerportal-ukrlp\src\UKRLP.ProviderSynchronise\UKRLP.ProviderSynchronise.csproj", "{FDDE95C7-2AFA-4EF1-B900-3E142380F70F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dfc.Coursedata.Enrichment.Data", "Dfc.Coursedata.Enrichment.Data\Dfc.Coursedata.Enrichment.Data.csproj", "{E5B5C0B8-B4B8-4285-A067-57B0934E490B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dfc.Coursedata.Enrichment.Functions", "Dfc.Coursedata.Enrichment.Functions\Dfc.Coursedata.Enrichment.Functions.csproj", "{5AD68F78-4FF8-4528-B56F-ECFD20A0C78E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,14 @@ Global
 		{FDDE95C7-2AFA-4EF1-B900-3E142380F70F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FDDE95C7-2AFA-4EF1-B900-3E142380F70F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FDDE95C7-2AFA-4EF1-B900-3E142380F70F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5B5C0B8-B4B8-4285-A067-57B0934E490B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5B5C0B8-B4B8-4285-A067-57B0934E490B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5B5C0B8-B4B8-4285-A067-57B0934E490B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5B5C0B8-B4B8-4285-A067-57B0934E490B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5AD68F78-4FF8-4528-B56F-ECFD20A0C78E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AD68F78-4FF8-4528-B56F-ECFD20A0C78E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5AD68F78-4FF8-4528-B56F-ECFD20A0C78E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5AD68F78-4FF8-4528-B56F-ECFD20A0C78E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

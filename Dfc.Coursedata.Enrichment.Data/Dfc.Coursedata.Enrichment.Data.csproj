@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--<TargetFramework>netcoreapp2.1</TargetFramework>-->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AzureFunctionsVersion>v2</AzureFunctionsVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Gremlin.Net.CosmosDb" Version="0.3.4.3-rc1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\dfc-providerportal-ukrlp\src\Dfc.ProviderPortal.UKRLP\Dfc.ProviderPortal.UKRLP.csproj" />
+  </ItemGroup>
+
+</Project>
