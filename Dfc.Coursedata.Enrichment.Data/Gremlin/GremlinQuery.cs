@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.Serialization.Json;
+using System.Text;
 using Dfc.Coursedata.Enrichment.Data.Interfaces;
 using Dfc.ProviderPortal.Providers;
 using Gremlin.Net.Driver;
 using Gremlin.Net.Structure.IO.GraphSON;
+using Microsoft.Azure.Documents;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -26,7 +31,7 @@ namespace Dfc.Coursedata.Enrichment.Data.Gremlin
             {
                 foreach (var query in gremlinQueries)
                 {
-                    Console.WriteLine(String.Format("Running this query: {0}: {1}", query.Key, query.Value));
+                    Console.WriteLine($"Running this query: {query.Key}: {query.Value}");
 
                     // Create async task to execute the Gremlin query.
                     var resultSet = SubmitRequest(gremlinClient, query).Result;
@@ -53,13 +58,71 @@ namespace Dfc.Coursedata.Enrichment.Data.Gremlin
             }
         }
 
-        //public bool InsertLars(IResult<ILarsSearchResult> larsData)
-        //{
-        //    // this will build the lars vertices
-        //    var gremlinQueries = GetGremlinQueries(larsData);
-        //    ExecuteGremlinQueries(gremlinQueries);
-        //    return true;
-        //}
+        // TODO: make this generic
+        private Entities.Provider Execute(Dictionary<string, string> gremlinQueries, string ukprn)
+        {
+            Entities.Provider provider = new Entities.Provider();
+            provider.Id = ukprn;
+            using (var gremlinClient = new GremlinClient(GremlinServer, new GraphSON2Reader(), new GraphSON2Writer(),
+                GremlinClient.GraphSON2MimeType))
+            {
+                foreach (var query in gremlinQueries)
+                {
+                    Console.WriteLine($"Running this query: {query.Key}: {query.Value}");
+
+                    // Create async task to execute the Gremlin query.
+                    var resultSet = SubmitRequest(gremlinClient, query).Result;
+
+                    //string newOutput = JsonConvert.SerializeObject(resultSet);
+                    //MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(newOutput));
+                    //DataContractJsonSerializer ser = new DataContractJsonSerializer(genericReturnObject.GetType());
+                    //genericReturnObject = ser.ReadObject(ms) as IEnumerable<T>;
+                    //ms.Close();
+
+                    if (resultSet.Count > 0)
+                    {
+                        Console.WriteLine("\tResult:");
+                        foreach (var result in resultSet)
+                        {
+                            // The vertex results are formed as Dictionaries with a nested dictionary for their properties
+                            string output = JsonConvert.SerializeObject(result);
+                            //var s = JsonConvert.DeserializeObject<IEnumerable<T>>(output);
+
+                            //foreach (var property in result[properties)
+                            //{
+                               
+                            //}
+
+                            var properties = result["properties"];
+
+                            var larsTitle = properties["LARTitle"];
+
+                            //var value = larsTitle.Result;
+                            var value = (larsTitle.Value as IEnumerable<object>).ToList();
+
+                            Console.WriteLine($"\t{output}");
+                        }
+
+                        Console.WriteLine();
+                    }
+
+                    //var properties = result["properties"];
+                    //var larsTitle = properties["LARTitle"];
+                    //(property.Value as IEnumerable<object>).Cast<object>().ToList()
+                    //https://stackoverflow.com/questions/48244787/gremlin-net-casting-from-enumerable-selectilistiterator-object-to-real-type
+
+                    // Print the status attributes for the result set.
+                    // This includes the following:
+                    //  x-ms-status-code            : This is the sub-status code which is specific to Cosmos DB.
+                    //  x-ms-total-request-charge   : The total request units charged for processing a request.
+                    PrintStatusAttributes(resultSet.StatusAttributes);
+                    Console.WriteLine();
+                }
+            }
+
+            return provider;
+
+        }
 
         public Dictionary<string, string> GetGremlinQueries(IEnumerable<Provider> providers)
         {
@@ -85,41 +148,60 @@ namespace Dfc.Coursedata.Enrichment.Data.Gremlin
             return gremlinQueries;
         }
 
-        //public Dictionary<string, string> GetGremlinQueries(IResult<ILarsSearchResult> larsData)
-        //{
-        //    Dictionary<string, string> gremlinQueries = new Dictionary<string, string>();
-
-        //    foreach (var data in larsData.Value.Value)
-        //    {
-        //        gremlinQueries.Add($"Add vertex Lar:{data.LearnAimRef}",
-        //            $@"g.addV('qualification').property('id','{data.LearnAimRef}').property('LARTitle', '{
-        //                    data.LearnAimRefTitle.Replace("'", string.Empty)
-        //                }')");
-
-        //        //gremlinQueries.Add($"Add vertex Lar:{data.LearnAimRef}",
-        //        //    $"g.addV('qualification').property('id','{data.LearnAimRef}').property('LARTitle', '{data.LearnAimRefTitle}')");
-        //    }
-
-        //    return gremlinQueries;
-        //}
-
-        //public Dictionary<string, string> GetGremlinQueries(IEnumerable<ILR> ilrData)
-        //{
-        //    Dictionary<string, string> gremlinQueries = new Dictionary<string, string>();
-
-        //    foreach (var ilr in ilrData)
-        //    {
-        //        gremlinQueries.Add($"AddEdge ukprn:{ilr.UKPRN} larsRef:{ilr.LearnAimRef}",
-        //            $@"g.V('{ilr.UKPRN}').addE('runs').to(g.V('{ilr.LearnAimRef}'))");
-        //    }
-
-        //    return gremlinQueries;
-        //}
-
-
-        public bool GetQualificationsByUkprn(string ukprn)
+        public Entities.Provider GetQualificationsByUkprn(string ukprn)
         {
-            return true;
+            var gremlinQueries = GetGremlinQueries(ukprn);
+            ExecuteGremlinQueries(gremlinQueries);
+            //var providerList = Execute(gremlinQueries, ukprn);
+
+            return new Entities.Provider() ;
+        }
+
+        public void AddProviderQualificationEdge(string ukprn, List<string> larsId)
+        {
+            var gremlinQueries = GetGremlinQueries(ukprn, larsId);
+            ExecuteGremlinQueries(gremlinQueries);
+        }
+
+        public void DeLinkQualificationsFromProvider(string ukprn, List<string> larsId)
+        {
+            var gremlinQueries = GetGremlinQueries(ukprn, larsId, true);
+            ExecuteGremlinQueries(gremlinQueries);
+        }
+
+        public Dictionary<string, string> GetGremlinQueries(string ukprn)
+        {
+            Dictionary<string, string> gremlinQueries = new Dictionary<string, string>();
+
+            gremlinQueries.Add($"Retrieve {ukprn}", $"g.V('{ukprn}').out('runs').hasLabel('qualification')");
+
+            return gremlinQueries;
+        }
+
+        public Dictionary<string, string> GetGremlinQueries(string ukprn, List<string> larsIds, bool delete = false)
+        {
+            Dictionary<string, string> gremlinQueries = new Dictionary<string, string>();
+
+            if (delete)
+            {
+                foreach (var larsId in larsIds)
+                {
+                    gremlinQueries.Add($"Deleting Edge for Ukprn: {ukprn}, larsId: {larsId}",
+                        $@"g.V('{ukprn}').outE('runs').where(inV().has('id','{larsId}'))");
+                }
+            }
+            else
+            {
+
+                foreach (var larsId in larsIds)
+                {
+                    gremlinQueries.Add($"Adding Edge for Ukprn: {ukprn}, larsId: {larsId}",
+                        $@"g.V('{ukprn}').addE('runs').to(g.V('{larsId}'))");
+                }
+            }
+
+            return gremlinQueries;
+
         }
 
         public GremlinQuery(IOptions<GremlinCosmosDbSettings> cosmosDbSettings) : base(cosmosDbSettings)
