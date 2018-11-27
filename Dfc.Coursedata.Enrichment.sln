@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UKRLP.ProviderSynchronise",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dfc.Coursedata.Enrichment.Data", "Dfc.Coursedata.Enrichment.Data\Dfc.Coursedata.Enrichment.Data.csproj", "{E5B5C0B8-B4B8-4285-A067-57B0934E490B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dfc.Coursedata.Enrichment.Functions", "Dfc.Coursedata.Enrichment.Functions\Dfc.Coursedata.Enrichment.Functions.csproj", "{5AD68F78-4FF8-4528-B56F-ECFD20A0C78E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dfc.Coursedata.Enrichment.Functions", "Dfc.Coursedata.Enrichment.Functions\Dfc.Coursedata.Enrichment.Functions.csproj", "{5AD68F78-4FF8-4528-B56F-ECFD20A0C78E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

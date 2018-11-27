@@ -1,6 +1,7 @@
+using System.Linq;
 using System.Threading.Tasks;
-using Dfc.Coursedata.Enrichment.Functions.Common.DependencyInjection;
 using Dfc.Coursedata.Enrichment.Data.Interfaces;
+using Dfc.Coursedata.Enrichment.Functions.Common.DependencyInjection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -9,16 +10,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Dfc.Coursedata.Enrichment.Functions.Qualifications
 {
-    public static class GetQualificationsByUkprn
+    public static class AddQualifications
     {
-        [FunctionName("GetQualificationsByUkprn")]
+        [FunctionName("AddQualifications")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            ILogger log, [Inject] IGremlinQuery gremlinInserter )
+            ILogger log, [Inject] IGremlinQuery gremlinQuery)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            var ukprn = req.Query["ukprn"];
+            var larsIds = req.Query["larsIds"];
 
-            var qualificationsByUkprn = gremlinInserter.GetQualificationsByUkprn("10028129");
+            gremlinQuery.AddProviderQualificationEdge(ukprn, larsIds.ToList());
 
             return new OkObjectResult($"Hello");
         }
