@@ -187,7 +187,7 @@ namespace Dfc.Coursedata.Enrichment.Data.Gremlin
                 foreach (var larsId in larsIds)
                 {
                     gremlinQueries.Add($"Deleting Edge for Ukprn: {ukprn}, larsId: {larsId}",
-                        $@"g.V('{ukprn}').outE('runs').where(inV().has('id','{larsId}'))");
+                        $@"g.V('{ukprn}').outE('runs').where(inV().has('id','{larsId}')).drop()");
                 }
             }
             else
@@ -202,6 +202,41 @@ namespace Dfc.Coursedata.Enrichment.Data.Gremlin
 
             return gremlinQueries;
 
+        }
+
+
+        private void ExecuteGremlinQueriesProvider(Dictionary<string, string> gremlinQueries)
+        {
+            using (var gremlinClient = new GremlinClient(GremlinServer, new GraphSON2Reader(), new GraphSON2Writer(),
+                GremlinClient.GraphSON2MimeType))
+            {
+                foreach (var query in gremlinQueries)
+                {
+                    Console.WriteLine($"Running this query: {query.Key}: {query.Value}");
+
+                    // Create async task to execute the Gremlin query.
+                    var resultSet = SubmitRequest(gremlinClient, query).Result;
+                    if (resultSet.Count > 0)
+                    {
+                        Console.WriteLine("\tResult:");
+                        foreach (var result in resultSet)
+                        {
+                            // The vertex results are formed as Dictionaries with a nested dictionary for their properties
+                            string output = JsonConvert.SerializeObject(result);
+                            Console.WriteLine($"\t{output}");
+                        }
+
+                        Console.WriteLine();
+                    }
+
+                    // Print the status attributes for the result set.
+                    // This includes the following:
+                    //  x-ms-status-code            : This is the sub-status code which is specific to Cosmos DB.
+                    //  x-ms-total-request-charge   : The total request units charged for processing a request.
+                    PrintStatusAttributes(resultSet.StatusAttributes);
+                    Console.WriteLine();
+                }
+            }
         }
 
         public GremlinQuery(IOptions<GremlinCosmosDbSettings> cosmosDbSettings) : base(cosmosDbSettings)

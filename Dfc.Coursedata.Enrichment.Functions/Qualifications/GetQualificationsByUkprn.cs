@@ -18,7 +18,10 @@ namespace Dfc.Coursedata.Enrichment.Functions.Qualifications
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
 
-            var qualificationsByUkprn = gremlinInserter.GetQualificationsByUkprn("10028129");
+            var ukprn = req.Query["ukprn"];
+
+            //var qualificationsByUkprn = gremlinInserter.GetQualificationsByUkprn("10028129");
+            var qualificationsByUkprn = gremlinInserter.GetQualificationsByUkprn(ukprn);
 
             return new OkObjectResult($"Hello");
         }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Dfc.Coursedata.Enrichment.Common.Interfaces;
 using Dfc.Coursedata.Enrichment.Importer.Entities;
 using Dfc.Coursedata.Enrichment.Services.Interfaces;
@@ -13,5 +11,6 @@ namespace Dfc.Coursedata.Enrichment.Importer.Interfaces
         bool InsertProviders(IEnumerable<Provider> providers);
         bool InsertLars(IResult<ILarsSearchResult> larsData);
         bool InsertEdges(IEnumerable<ILR> ilrData);
+        bool InsertIlrData(List<ILR> ilrData);
     }
 }

@@ -6,6 +6,7 @@ using Gremlin.Net.Driver;
 using Gremlin.Net.Driver.Exceptions;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Microsoft.Azure.CosmosDB.BulkExecutor.Graph;
 
 namespace Dfc.Coursedata.Enrichment.Importer.Gremlin
 {

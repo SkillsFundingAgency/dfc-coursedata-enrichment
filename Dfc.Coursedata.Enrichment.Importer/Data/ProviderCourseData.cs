@@ -2,14 +2,12 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.ServiceModel.Description;
 using System.Threading.Tasks;
 using CsvHelper;
 using Dfc.Coursedata.Enrichment.Importer.Entities;
 using Dfc.Coursedata.Enrichment.Importer.Interfaces;
 using Dfc.ProviderPortal.Providers;
 using Microsoft.Azure.WebJobs.Host;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using UKRLP.Storage;
 

@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Dfc.Coursedata.Enrichment.Data.Interfaces;
@@ -9,7 +7,6 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Dfc.Coursedata.Enrichment.Functions.Qualifications
 {
