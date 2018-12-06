@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
+using System.Text;
 using Dfc.Coursedata.Enrichment.Common.Interfaces;
 using Dfc.Coursedata.Enrichment.Importer.Entities;
+using Dfc.Coursedata.Enrichment.Importer.Entities.CSV;
 using Dfc.Coursedata.Enrichment.Importer.Interfaces;
 using Dfc.Coursedata.Enrichment.Services.Interfaces;
-using Dfc.ProviderPortal.Providers;
 using Gremlin.Net.Driver;
 using Gremlin.Net.Structure.IO.GraphSON;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Microsoft.Azure.CosmosDB.BulkExecutor.Graph;
+using Provider = Dfc.ProviderPortal.Providers.Provider;
 
 namespace Dfc.Coursedata.Enrichment.Importer.Gremlin
 {
@@ -240,6 +243,197 @@ namespace Dfc.Coursedata.Enrichment.Importer.Gremlin
             }
 
             return gremlinQueries;
+        }
+
+        // ----------------------------------------------------------------
+
+        
+
+
+        public void InsertCsvProvider(Entities.CSV.Provider provider)
+        {
+            var gremlinQueries = GetProviderGremlinQueries(provider);
+            ExecuteGremlinQueries(gremlinQueries);
+        }
+
+        private Dictionary<string, string> GetProviderGremlinQueries(Entities.CSV.Provider provider)
+        {
+            var gremlinQueries = new Dictionary<string, string>();
+
+            var properties = new Dictionary<string, string>
+            {
+                {"id", provider.PROVIDER_ID},
+                {"ukprn", provider.UKPRN},
+                {"providerName", provider.PROVIDER_NAME}
+            };
+            var nodeCreationQuery = GetNodeCreationQuery("provider", properties);
+            gremlinQueries.Add($"Add Provider: {provider.UKPRN}", nodeCreationQuery);
+            return gremlinQueries;
+        }
+
+        public List<string> InsertCsvQualification(string ukprn, List<Qualification> qualifications)
+        {
+            // insert the qualifications
+            var larsList = qualifications.Where(x => x.UKPRN == ukprn).Select(ilr => ilr.LearnAimRef).Distinct().ToList();
+            var gremlinQueries = GetQualificationGremlinQueries(ukprn, larsList);
+            ExecuteGremlinQueries(gremlinQueries);
+            return larsList;
+        }
+
+        private Dictionary<string, string> GetQualificationGremlinQueries(string ukprn, List<string> larsList)
+        {
+            var gremlinQueries = new Dictionary<string, string>();
+            foreach (var lars in larsList)
+            {
+                // add the qualification
+                gremlinQueries.Add($"Add Qualification {lars}", $@"g.addV('qualification').property('id', '{lars}')");
+
+                // add the relationship "runs"
+                gremlinQueries.Add($"Add Edge ukprn: {ukprn} larsRef: {lars}", $@"g.V().hasLabel('provider').has('ukprn','{ukprn}').addE('runs').to(g.V().hasLabel('qualification').has('id','{lars}') )");
+
+                //g.V().hasLabel('person').has('firstName', 'Thomas').addE('knows').to(g.V().hasLabel('person').has('firstName', 'Mary Kay'))
+            }
+
+            return gremlinQueries;
+        }
+
+        public void InsertCsvCourseDetails(string ukprn, List<CourseDetail> courseDetails)
+        {
+            // insert a course node
+            // insert a coursedetail node
+            // insert a relationship between course and ukprn
+            // insert a relationship between course and qualification larsref (ladid)
+
+            var gremlinQueries = GetCourseDetailGremlinQueries(ukprn, courseDetails);
+            ExecuteGremlinQueries(gremlinQueries);
+        }
+
+        private Dictionary<string, string> GetCourseDetailGremlinQueries(string ukprn, List<CourseDetail> courseDetails)
+        {
+            var gremlinQueries = new Dictionary<string, string>();
+
+            var larsList = courseDetails.Select(q => q.LAD_ID).Distinct().ToList();
+            foreach (var lars in larsList)
+            {
+                // add qualification (larsid)
+                gremlinQueries.Add($"Add Qualification {lars}", $@"g.addV('qualification').property('id', '{lars}')");
+
+                // add edge between ukprn and lad_id (larsid)
+                gremlinQueries.Add($"Add Edge ukprn: {ukprn} larsRef: {lars}", $@"g.V().hasLabel('provider').has('ukprn','{ukprn}').addE('runs').to(g.V().hasLabel('qualification').has('id','{lars}') )");
+
+            }
+
+            foreach (var courseDetail in courseDetails)
+            {
+
+                // add a course
+                gremlinQueries.Add($"Add Course {courseDetail.COURSE_ID}", $@"g.addV('course').property('id', '{courseDetail.COURSE_ID}')");
+
+                // add a course detail node
+                var courseDetailGuid = Guid.NewGuid();
+                gremlinQueries.Add($"Add CourseDetail {courseDetailGuid}", $@"g.addV('courseDetail').property('id', '{courseDetailGuid}').property('courseTitle', '{courseDetail.PROVIDER_COURSE_TITLE}').property('courseSummary', '{courseDetail.COURSE_SUMMARY}')");
+                //gremlinQueries.Add($"Add CourseDetail {courseDetail.COURSE_ID}", $@"g.addV('courseDetail').property('id', '{courseDetail.COURSE_ID}').property('courseTitle', '{courseDetail.PROVIDER_COURSE_TITLE}').property('courseSummary', '{courseDetail.COURSE_SUMMARY}')");
+
+                // edge between course and coursedetail
+                //gremlinQueries.Add($"Add Edge course {courseDetail.COURSE_ID} and coursedetail {courseDetail.COURSE_ID}", $@"g.V().hasLabel('course').has('id','{courseDetail.COURSE_ID}').addE('has').to(g.V().hasLabel('courseDetail').has('id', '{courseDetail.COURSE_ID}'))");
+                gremlinQueries.Add($"Add Edge course {courseDetail.COURSE_ID} and coursedetail {courseDetailGuid}", $@"g.V().hasLabel('course').has('id','{courseDetail.COURSE_ID}').addE('has').to(g.V().hasLabel('courseDetail').has('id', '{courseDetailGuid}'))");
+
+                // edge between course and ukprn
+                gremlinQueries.Add($"Add Edge ukprn {ukprn} and course {courseDetail.COURSE_ID}", $@"g.V().hasLabel('provider').has('ukprn','{ukprn}').addE('runs').to(g.V().hasLabel('course').has('id', '{courseDetail.COURSE_ID}'))");
+
+                // edge between course and larsref (ladid)
+                gremlinQueries.Add($"Add Edge course {courseDetail.COURSE_ID} and qualification {courseDetail.LAD_ID}", $@"g.V().hasLabel('course').has('id','{courseDetail.COURSE_ID}').addE('hasa').to(g.V().hasLabel('qualification').has('id', '{courseDetail.LAD_ID}'))");
+
+
+                // https://docs.microsoft.com/en-us/azure/cosmos-db/create-graph-gremlin-console
+                // g.V().hasLabel('person').has('firstName', 'Thomas').addE('knows').to(g.V().hasLabel('person').has('firstName', 'Mary Kay'))
+            }
+
+            return gremlinQueries;
+        }
+
+        public void InsertCsvCourseDetailsOnly(string ukprn, List<CourseDetail> courseDetails)
+        {
+            var gremlinQueries = GetCourseDetailOnlyGremlinQueries(ukprn, courseDetails);
+            ExecuteGremlinQueries(gremlinQueries);
+        }
+
+        private Dictionary<string, string> GetCourseDetailOnlyGremlinQueries(string ukprn,
+            List<CourseDetail> courseDetails)
+        {
+            var gremlinQueries = new Dictionary<string, string>();
+            foreach (var courseDetail in courseDetails)
+            {
+                // add a course detail node
+                var courseDetailGuid = Guid.NewGuid().ToString();
+                gremlinQueries.Add($"Add CourseDetail {courseDetailGuid}", $@"g.addV('courseDetail').property('id', '{courseDetailGuid}').property('courseTitle', '{courseDetail.PROVIDER_COURSE_TITLE}').property('courseSummary', '{courseDetail.COURSE_SUMMARY}')");
+                gremlinQueries.Add($"Add Edge course {courseDetail.COURSE_ID} and coursedetail {courseDetailGuid}", $@"g.V().hasLabel('course').has('id','{courseDetail.COURSE_ID}').addE('has').to(g.V().hasLabel('courseDetail').has('id', '{courseDetailGuid}'))");
+            }
+
+            return gremlinQueries;
+        }
+
+
+        public void InsertCsvVenues(List<Venue> venues)
+        {
+            var gremlinQueries = GetVenueGremlinQueries(venues);
+            ExecuteGremlinQueries(gremlinQueries);
+        }
+
+        private Dictionary<string, string> GetVenueGremlinQueries(List<Venue> venues)
+        {
+            var gremlinQueries = new Dictionary<string, string>();
+            foreach (var venue in venues)
+            {
+                gremlinQueries.Add($"Add Venue {venue.VENUE_ID}", $@"g.addV('venue').property('id', '{venue.VENUE_ID}').property('venueName','{venue.VENUE_NAME}')");
+
+                // TODO: could link provider -> uses -> venue
+            }
+
+            return gremlinQueries;
+        }
+
+        public void InsertCsvOpportunities(List<Opportunity> opportunities)
+        {
+            var gremlinQueries = GetOpportunityGremlinQueries(opportunities);
+            ExecuteGremlinQueries(gremlinQueries);
+        }
+
+        private Dictionary<string, string> GetOpportunityGremlinQueries(List<Opportunity> opportunities)
+        {
+            var gremlinQueries = new Dictionary<string, string>();
+            foreach (var opportunity in opportunities)
+            {
+                // edge between courseid and venueid
+                gremlinQueries.Add($"Add Edge course {opportunity.COURSE_ID} and venue {opportunity.VENUE_ID}", $@"g.V().hasLabel('course').has('id','{opportunity.COURSE_ID}').addE('runat').to(g.V().hasLabel('venue').has('id', '{opportunity.VENUE_ID}'))");
+
+                // TODO: could do venue -> runs -> course
+            }
+
+            return gremlinQueries;
+        }
+
+        private string GetEdgeQuery(string label1, KeyValuePair<string, string> node1 , string edge, string label2, KeyValuePair<string, string> node2 )
+        {
+            string edgeQuery =
+                $@"g.V().hasLabel('{label1}').has('{node1.Key}','{node1.Value}').addE('{edge}').to(g.V().hasLabel('{label2
+                    }').has('{node2.Value}', '{node2.Value}'))";
+
+            return edgeQuery;
+        }
+
+        private string GetNodeCreationQuery(string nodeName, Dictionary<string, string> properties)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append($@"g.addV('{nodeName}')");
+
+            foreach (var property in properties)
+            {
+                sb.Append($@".property('{property.Key}', '{property.Value}')");
+            }
+
+            return sb.ToString();
         }
 
         public GremlinInsert(IOptions<GremlinCosmosDbSettings> cosmosDbSettings) : base(cosmosDbSettings)

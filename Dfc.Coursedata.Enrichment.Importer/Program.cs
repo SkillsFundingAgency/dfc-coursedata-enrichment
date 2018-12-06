@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 using Dfc.Coursedata.Enrichment.Common.Interfaces;
 using Dfc.Coursedata.Enrichment.Importer.Data;
 using Dfc.Coursedata.Enrichment.Importer.Entities;
+using Dfc.Coursedata.Enrichment.Importer.Entities.CSV;
 using Dfc.Coursedata.Enrichment.Importer.Gremlin;
 using Dfc.Coursedata.Enrichment.Importer.Interfaces;
 using Dfc.Coursedata.Enrichment.Services;
@@ -19,14 +21,11 @@ namespace Dfc.Coursedata.Enrichment.Importer
     internal class Program
     {
         public static IConfiguration Configuration { get; set; }
-        private static bool _insertProviders = true;
+        private static bool _insertProviders = false;
         private static bool _insertLarsData = false;
         private static bool _insertILRData = false;
+        private static bool _loadWholeModel = true;
 
-        // TODO: before committing to github, move sensitive data to localsettings.json
-        // TODO: add appsettings.json to .gitignore
-        // TODO: add function app codes (for providers) to appsettings.json
-        // TODO: add appkey stuff for proj reference to appsettings.json (for providers) or just add as env variables in debug section for now
 
         static void Main(string[] args)
         {
@@ -40,7 +39,6 @@ namespace Dfc.Coursedata.Enrichment.Importer
             if (_insertProviders)
             {
                 var p = pcd.GetProviderData().Result;
-                // insert into cosmos graph db
                 gremlInsert.InsertProviders(p);
             }
 
@@ -55,7 +53,6 @@ namespace Dfc.Coursedata.Enrichment.Importer
 
                 if (larsData != null)
                 {
-                    // pass larsData to gremlin
                     gremlInsert.InsertLars(larsData);
                 }
             }
@@ -64,12 +61,31 @@ namespace Dfc.Coursedata.Enrichment.Importer
             {
                 var ilrData = pcd.GetILRData();
 
-                // todo: rework this
                 var enumerable = ilrData as ILR[] ?? ilrData.ToArray();
-                if (enumerable.ToList().Count > 0)
-                {
-                    gremlInsert.InsertEdges(enumerable);
-                }
+
+                gremlInsert.InsertIlrData(enumerable.ToList());
+
+                
+                //if (enumerable.ToList().Count > 0)
+                //{
+                //    gremlInsert.InsertEdges(enumerable);
+                //}
+            }
+
+            if (_loadWholeModel)
+            {
+                var provider = pcd.GetProvider();
+                var courseDetails = pcd.GetCourseDetails();
+                var venues = pcd.GetVenues();
+                //var qualifications = pcd.GetQualifications();
+                var opportunities = pcd.GetOpportunities();
+
+                gremlInsert.InsertCsvProvider(provider);
+                gremlInsert.InsertCsvCourseDetails(provider.UKPRN, courseDetails);  // creates course node and coursedetail node, creates edges provider/course, course/qualification
+                gremlInsert.InsertCsvVenues(venues);                                // load venues and then opportunities to link venue to course
+                gremlInsert.InsertCsvOpportunities(opportunities);
+
+                //gremlInsert.InsertCsvCourseDetailsOnly(provider.UKPRN, courseDetails);
             }
 
             // Exit program
@@ -95,8 +111,6 @@ namespace Dfc.Coursedata.Enrichment.Importer
 
         public static ServiceProvider ConfigureServices()
         {
-            //var direct = Directory.GetCurrentDirectory();
-
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
