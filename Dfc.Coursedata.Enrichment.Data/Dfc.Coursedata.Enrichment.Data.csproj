@@ -14,4 +14,8 @@
     <ProjectReference Include="..\..\dfc-providerportal-ukrlp\src\Dfc.ProviderPortal.UKRLP\Dfc.ProviderPortal.UKRLP.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Entities\CourseModel\" />
+  </ItemGroup>
+
 </Project>
